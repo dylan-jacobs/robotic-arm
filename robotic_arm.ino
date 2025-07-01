@@ -8,12 +8,13 @@
 
 const int SERVO1_PIN = 13;
 const int SERVO2_PIN = 15;
-const double CONTROLLER_SENSITIVITY = 0.0001;
+const double CONTROLLER_SENSITIVITY = 0.33;
+const int DRIFT_THRESHOLD = 5;
 
 Servo servo1;
 Servo servo2;
-double servo1_pos = 0;
-double servo2_pos = 0;
+double servo1_pos = 90;
+double servo2_pos = 90;
 
 /*
 void get_ESP32_MAC1() {
@@ -69,7 +70,7 @@ void setup() {
   servo1.setPeriodHertz(50);
   servo2.setPeriodHertz(50);
   servo1.attach(SERVO1_PIN, 500, 2500);
-  servo1.attach(SERVO2_PIN, 500, 2500);
+  servo2.attach(SERVO2_PIN, 500, 2500);
 
   servo1.write(0);
   servo2.write(0);
@@ -79,23 +80,22 @@ void loop() {
   if (PS4.isConnected()) {
     // Serial.println("PS4 Controller connected!");
 
-    int x = PS4.LStickX();
-    int y = PS4.LStickY();
+    double stickX = PS4.LStickX();
+    double stickY = PS4.LStickY();
 
-    Serial.print("X: ");
-    Serial.print(x);
-    Serial.print(", Y:");
-    Serial.println(y);
-    
-    servo1_pos += (x*CONTROLLER_SENSITIVITY);
-    servo1_pos = min(180.0, servo1_pos);
-    servo1_pos = max(0.0, servo1_pos);
+    if (abs(stickX) >  DRIFT_THRESHOLD) {
+      servo1_pos += (stickX*CONTROLLER_SENSITIVITY);
+    }
+    if (abs(stickY) > DRIFT_THRESHOLD) {
+      servo2_pos += (stickY*CONTROLLER_SENSITIVITY);
+    }
+    servo1_pos = constrain(servo1_pos, 0, 180);
+    servo2_pos = constrain(servo2_pos, 0, 180);
+
     servo1.write(servo1_pos);
-
-    servo2_pos += (y*CONTROLLER_SENSITIVITY);
-    servo2_pos = min(180.0, servo2_pos);
-    servo2_pos = max(0.0, servo2_pos);
     servo2.write(servo2_pos);
+
+    Serial.println(servo1_pos);
 
 
     delay(50);  // slow down output
